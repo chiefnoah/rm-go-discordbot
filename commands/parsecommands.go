@@ -19,8 +19,15 @@ var helpCommand = CommandProcess{
 }
 
 var tempChannelCommand = CommandProcess{
-	Triggers: map[string]interface{}{"temp": nil, "channel": nil},
+	Triggers: map[string]interface{}{"gChannel": nil},
 	Run: tempChannel,
+	AdditionalParams: []string{},
+	DeleteCommand: false,
+}
+
+var optRoles = CommandProcess{
+	Triggers: map[string]interface{}{"jR": nil, "joinRole": nil},
+	Run: roleInfo,
 	AdditionalParams: []string{},
 	DeleteCommand: false,
 }
@@ -35,9 +42,6 @@ var getRoles = CommandProcess{
 //Commands MUST be specified here to be checked.
 var enabledCommands []CommandProcess = []CommandProcess{helpCommand, tempChannelCommand, getRoles}
 
-//Array of tempChannels Created
-var genChannels []discordgo.Channel
-var numGenChannels int = 0
 
 //Wraps command triggers, additional parameters, and explicitly defines the function to be called when a command is typed
 //Triggers: a map that's only used for the keys. Use contains() to check if the map contains
@@ -67,26 +71,44 @@ func tempChannel(s *discordgo.Session, m *discordgo.Message, extraArgs []string,
 	channelName := strings.Split(m.Content, " ")[1:]
 	//Add error checks
 
-	if(numGenChannels + 1 >= len(genChannels)){
-		// genChannels is full; must grow.
-		// We double its size and add 1, so if the size is zero we still grow.
-		newGenChannels := make([]int, len(genChannels), 2*len(genChannels)+1)
-		copy(newGenChannels, genChannels)
-		genChannels = newGenChannels
+	newChannel := discordgo.ChannelCreate{}
+
+	newChannel.Name = channelName
+	newChannel.Type = "voice"
+
+	s.State.ChannelAdd(newChannel)
+
+	s.GuildMemberMove(nil,m.Author,newChannel.ID)
+
+	if deleteCommand {
+		s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
-	genChannels[numGenChannels] = discordgo.ChannelCreate{}
-
-	genChannels[numGenChannels].Name = channelName
-	genChannels[numGenChannels].Type = "Voice"
-
-	s.State.ChannelAdd(genChannels[numGenChannels])
-
-	s.GuildMemberMove(nil,m.Author,genChannels[numGenChannels].ID)
-	numGenChannels++
 }
 
 func optIn(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
+	if len(m.Content) < 2 {
+		return
+	}
+	role := strings.Split(m.Content, " ")[1:]
 
+	//IMPORTANT
+	//TODO: ADD A CHECK TO SEE IF THEY CAN JOIN THE ROLE
+	//IMPORTANT
+
+	curChannel, err1 := s.Channel(m.ChannelID)
+	if err1 != nil {
+		log.Fatal("Unable to fetch channel")
+		return
+	}
+	mem, err2 := s.GuildMember(curChannel.GuildID, m.Author.ID)
+	if err2 != nil {
+		log.Fatal("Unable to fetch guild member")
+		return
+	}
+	s.GuildMemberEdit(curChannel.GuildID,m.Author.ID,append(mem.Roles,role))
+	if deleteCommand {
+		s.ChannelMessageDelete(m.ChannelID, m.ID)
+	}
 }
 
 func roleInfo(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
