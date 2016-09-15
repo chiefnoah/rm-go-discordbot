@@ -11,6 +11,9 @@ const configFile = "config.ini"
 
 var cfg *ConfigWrapper
 
+/*
+Loads config from file
+ */
 func LoadConfig() *ConfigWrapper {
 	//If we don't already have a pointer to a config struct, load it from a file
 	if cfg == nil {
