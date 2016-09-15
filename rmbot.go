@@ -23,9 +23,6 @@ func main() {
 	}
 	defer discord.Close()
 
-
-
-
 	for {
 		discord.UpdateStatus(0, "moderating")
 		time.Sleep(10 * time.Second)
