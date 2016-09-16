@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-
+	//Load config from file
 	cfg := config.LoadConfig()
 
 	discord, err := discordgo.New(cfg.AppConfig.AuthToken)
