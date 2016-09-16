@@ -22,6 +22,7 @@ var tempChannelCommand = CommandProcess{
 	Triggers: map[string]interface{}{"gChannel": nil},
 	Run: tempChannel,
 	AdditionalParams: []string{},
+	Description: "Generates a temporarty voice channel of given name",
 	DeleteCommand: false,
 }
 
@@ -29,6 +30,7 @@ var optRoles = CommandProcess{
 	Triggers: map[string]interface{}{"jR": nil, "joinRole": nil},
 	Run: roleInfo,
 	AdditionalParams: []string{},
+	Description: "Allows Users to opt-in to hidden roles",
 	DeleteCommand: false,
 }
 
@@ -36,11 +38,12 @@ var getRoles = CommandProcess{
 	Triggers: map[string]interface{}{"r": nil, "roles": nil},
 	Run: roleInfo,
 	AdditionalParams: []string{},
+	Description: "Fetches roles and descriptors of roles",
 	DeleteCommand: false,
 }
 
 //Commands MUST be specified here to be checked.
-var enabledCommands []CommandProcess = []CommandProcess{helpCommand, tempChannelCommand, getRoles}
+var enabledCommands []CommandProcess = []CommandProcess{helpCommand, tempChannelCommand, getRoles, optRoles}
 
 
 //Wraps command triggers, additional parameters, and explicitly defines the function to be called when a command is typed
@@ -52,6 +55,7 @@ type CommandProcess struct {
 	Triggers         map[string]interface{}                                       //Maps for fast lookup, we don't actually care about what they hold
 	Run              func(*discordgo.Session, *discordgo.Message, []string, bool) //I explicity define a function that implements Command so we can just loop through all the CommandProcesses and call Run generically
 	AdditionalParams []string
+	Description	 string
 	DeleteCommand    bool
 }
 
@@ -124,9 +128,17 @@ func roleInfo(s *discordgo.Session, m *discordgo.Message, extraArgs []string, de
 }
 
 func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
-	messageContent := "Fill in commands"
 
-	message, err := s.ChannelMessageSend(m.ChannelID, messageContent)
+	helpMessage := ""
+
+	for _, v := range enabledCommands {
+		for _, b := range enabledCommands[v].Triggers {
+			append(helpMessage, enabledCommands[v].Triggers[b] + ", " )
+		}
+		append(helpMessage, enabledCommands[v].Description + "\n")
+	}
+
+	message, err := s.ChannelMessageSend(m.ChannelID, helpMessage)
 	if err != nil || message == nil {
 		log.Print("Unable to send message to discord: ", err)
 	}
