@@ -37,7 +37,7 @@ var optRoles = CommandProcess{
 
 var d20 = CommandProcess{
 	Triggers: map[string]interface{}{"d20": nil, "roll": nil},
-	Run: roleInfo,
+	Run: rollD20,
 	AdditionalParams: []string{},
 	Description: "Rolls a D20",
 	DeleteCommand: false,
