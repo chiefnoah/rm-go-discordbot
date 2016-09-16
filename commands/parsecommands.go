@@ -4,6 +4,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"log"
+	"math/rand"
 )
 
 /****************************************************************************************************************
@@ -34,6 +35,14 @@ var optRoles = CommandProcess{
 	DeleteCommand: false,
 }
 
+var d20 = CommandProcess{
+	Triggers: map[string]interface{}{"d20": nil, "roll": nil},
+	Run: roleInfo,
+	AdditionalParams: []string{},
+	Description: "Rolls a D20",
+	DeleteCommand: false,
+}
+
 var getRoles = CommandProcess{
 	Triggers: map[string]interface{}{"r": nil, "roles": nil},
 	Run: roleInfo,
@@ -43,7 +52,7 @@ var getRoles = CommandProcess{
 }
 
 //Commands MUST be specified here to be checked.
-var enabledCommands []CommandProcess = []CommandProcess{helpCommand, tempChannelCommand, getRoles, optRoles}
+var enabledCommands []CommandProcess = []CommandProcess{helpCommand, tempChannelCommand, getRoles, d20, optRoles}
 
 
 //Wraps command triggers, additional parameters, and explicitly defines the function to be called when a command is typed
@@ -117,6 +126,18 @@ func optIn(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delet
 
 func roleInfo(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
 	messageContent := "Fill in commands"
+
+	message, err := s.ChannelMessageSend(m.ChannelID, messageContent)
+	if err != nil || message == nil {
+		log.Print("Unable to send message to discord: ", err)
+	}
+	if deleteCommand {
+		s.ChannelMessageDelete(m.ChannelID, m.ID)
+	}
+}
+
+func rollD20(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
+	messageContent := "" + rand.Intn(21)
 
 	message, err := s.ChannelMessageSend(m.ChannelID, messageContent)
 	if err != nil || message == nil {
