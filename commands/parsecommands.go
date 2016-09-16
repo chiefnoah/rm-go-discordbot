@@ -12,12 +12,13 @@ import (
 *						Define commands here!						*
 *														*
 ****************************************************************************************************************/
-var helpCommand = CommandProcess{
+/*var helpCommand = CommandProcess{
 	Triggers: map[string]interface{}{"h": nil, "help": nil, "wat": nil},
 	Run: help,
 	AdditionalParams: []string{},
 	DeleteCommand: false,
-}
+	Description: "Prints this dialog",
+}*/
 
 var tempChannelCommand = CommandProcess{
 	Triggers: map[string]interface{}{"gChannel": nil},
@@ -27,7 +28,7 @@ var tempChannelCommand = CommandProcess{
 	DeleteCommand: false,
 }
 
-var optRoles = CommandProcess{
+var optRolesCommand = CommandProcess{
 	Triggers: map[string]interface{}{"jR": nil, "joinRole": nil},
 	Run: optIn,
 	AdditionalParams: []string{},
@@ -35,7 +36,7 @@ var optRoles = CommandProcess{
 	DeleteCommand: false,
 }
 
-var d20 = CommandProcess{
+var d20Command = CommandProcess{
 	Triggers: map[string]interface{}{"d20": nil, "roll": nil},
 	Run: rollD20,
 	AdditionalParams: []string{},
@@ -43,7 +44,7 @@ var d20 = CommandProcess{
 	DeleteCommand: false,
 }
 
-var getRoles = CommandProcess{
+var getRolesCommand = CommandProcess{
 	Triggers: map[string]interface{}{"r": nil, "roles": nil},
 	Run: roleInfo,
 	AdditionalParams: []string{},
@@ -52,7 +53,7 @@ var getRoles = CommandProcess{
 }
 
 //Commands MUST be specified here to be checked.
-var enabledCommands []CommandProcess = []CommandProcess{helpCommand, tempChannelCommand, getRoles, d20, optRoles}
+var enabledCommands []CommandProcess = []CommandProcess{tempChannelCommand, getRolesCommand, d20Command, optRolesCommand}
 
 
 //Wraps command triggers, additional parameters, and explicitly defines the function to be called when a command is typed
@@ -84,14 +85,20 @@ func tempChannel(s *discordgo.Session, m *discordgo.Message, extraArgs []string,
 	channelName := strings.Split(m.Content, " ")[1:]
 	//Add error checks
 
-	newChannel := discordgo.ChannelCreate{}
+	newChannel := discordgo.Channel{}
 
-	newChannel.Name = channelName
+	newChannel.Name = channelName[0]
 	newChannel.Type = "voice"
 
-	s.State.ChannelAdd(newChannel)
+	s.State.ChannelAdd(&newChannel)
 
-	s.GuildMemberMove(nil,m.Author,newChannel.ID)
+	curChannel, err := s.Channel(m.ChannelID)
+	if err != nil {
+		log.Print("Unable to fetch channel")
+		return
+	}
+
+	s.GuildMemberMove(curChannel.GuildID,m.Author.ID,newChannel.ID)
 
 	if deleteCommand {
 		s.ChannelMessageDelete(m.ChannelID, m.ID)
@@ -102,20 +109,20 @@ func optIn(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delet
 	if len(m.Content) < 2 {
 		return
 	}
-	role := strings.Split(m.Content, " ")[1:]
+	role := strings.Split(m.Content, " ")[1:][0]
 
 	//IMPORTANT
 	//TODO: ADD A CHECK TO SEE IF THEY CAN JOIN THE ROLE
 	//IMPORTANT
 
-	curChannel, err1 := s.Channel(m.ChannelID)
-	if err1 != nil {
-		log.Fatal("Unable to fetch channel")
+	curChannel, err := s.Channel(m.ChannelID)
+	if err != nil {
+		log.Print("Unable to fetch channel")
 		return
 	}
-	mem, err2 := s.GuildMember(curChannel.GuildID, m.Author.ID)
-	if err2 != nil {
-		log.Fatal("Unable to fetch guild member")
+	mem, err := s.GuildMember(curChannel.GuildID, m.Author.ID)
+	if err != nil {
+		log.Print("Unable to fetch guild member")
 		return
 	}
 	s.GuildMemberEdit(curChannel.GuildID,m.Author.ID,append(mem.Roles,role))
@@ -137,7 +144,7 @@ func roleInfo(s *discordgo.Session, m *discordgo.Message, extraArgs []string, de
 }
 
 func rollD20(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
-	messageContent := "" + rand.Intn(21)
+	messageContent := "" + string(rand.Intn(21))
 
 	message, err := s.ChannelMessageSend(m.ChannelID, messageContent)
 	if err != nil || message == nil {
@@ -148,15 +155,16 @@ func rollD20(s *discordgo.Session, m *discordgo.Message, extraArgs []string, del
 	}
 }
 
-func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
+/*func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
 
 	helpMessage := ""
 
 	for _, v := range enabledCommands {
-		for _, b := range enabledCommands[v].Triggers {
-			append(helpMessage, enabledCommands[v].Triggers[b] + ", " )
+		for k,_ := range v.Triggers {
+			helpMessage += k + ", "
 		}
-		append(helpMessage, enabledCommands[v].Description + "\n")
+		helpMessage = helpMessage[:len(helpMessage) - 2] //Trim off the last ", "
+		helpMessage += "\n" + v.Description
 	}
 
 	message, err := s.ChannelMessageSend(m.ChannelID, helpMessage)
@@ -166,7 +174,7 @@ func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delete
 	if deleteCommand {
 		s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
-}
+}*/
 
 func contains(set map[string]interface{}, s string) bool {
 	_, ok := set[s]

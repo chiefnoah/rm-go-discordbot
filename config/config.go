@@ -34,6 +34,14 @@ type appConfig struct {
 	CommandPrefix string
 }
 
+type cpuConfig struct {
+	GoddessNames  []string `toml:"GoddessNames"`
+	CPUNames      []string `toml:"CPUNames"`
+	GoddessImages [][]string `toml:"GoddessImages"`
+	CPUImages     [][]string `toml:"CPUImages"`
+}
+
 type ConfigWrapper struct {
 	AppConfig appConfig
+	CPUConfig cpuConfig
 }

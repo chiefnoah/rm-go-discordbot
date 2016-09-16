@@ -28,3 +28,4 @@ rm-go-discordbot
 .idea/tasks.xml
 .idea/workspace.xml
 .idea/libraries/GOPATH__rm_go_discordbot_.xml
+*.ini
