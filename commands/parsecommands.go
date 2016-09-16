@@ -29,7 +29,7 @@ var tempChannelCommand = CommandProcess{
 
 var optRoles = CommandProcess{
 	Triggers: map[string]interface{}{"jR": nil, "joinRole": nil},
-	Run: roleInfo,
+	Run: optIn,
 	AdditionalParams: []string{},
 	Description: "Allows Users to opt-in to hidden roles",
 	DeleteCommand: false,

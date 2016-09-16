@@ -24,6 +24,15 @@ func main() {
 	}
 	defer discord.Close()
 
+	discord.AddHandler(func(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
+
+		newMessage := "Clan Overall Rules\nDon’t be a dick\nRespect and listen to the admins\nHave all the funs.\n_help for a list of commands for the management bot.\nRead the rest of the rules here: https://docs.google.com/document/d/1xi1nT6JGxpSwU-6YxcY8eX37MF4l3gzQbVnAqswrIKk/edit"
+		message, err := s.ChannelMessageSend(225086487752867840, newMessage)
+		if err != nil || message == nil {
+			log.Print("Unable to send message to discord: ", err)
+		}
+	})
+
 	discord.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		log.Print("Author: ", m.Author.Username, "\n Content: ", m.Content)
 		if len(m.Content) > 0 && string(m.Content[0]) == cfg.AppConfig.CommandPrefix {
