@@ -226,22 +226,12 @@ func setGoddess(s *discordgo.Session, m *discordgo.Message, extraArgs []string, 
 	cfg := config.LoadConfig()
 	goddess := strings.Split(m.Content, " ")[1:][0]
 	log.Print("Attempting to set profile to goddess: ", goddess)
-	curChannel, err := s.Channel(m.ChannelID)
-	if err != nil {
-		log.Print("Unable to get the current channel: ", err)
-		return
-	}
-	curGuild, err := s.Guild(curChannel.GuildID)
-	if err != nil {
-		log.Print("Unable to get the current guild: ", err)
-	}
 	botUser, err := s.User("@me")
 	if err != nil {
 		log.Print("Unable to get bot user!")
 		return
 	}
 	//log.Printf("Guild: %+s\nBot: %+s", curGuild, botUser)
-
 	name := ""
 	avatarImgDate := "data:image/jpeg;base64,"
 	for p, v := range cfg.CPUConfig.GoddessNames {
@@ -258,16 +248,23 @@ func setGoddess(s *discordgo.Session, m *discordgo.Message, extraArgs []string, 
 	}
 	//This means we got were able to load a goddess name and image
 	if len(name) > 0 {
-		newUser, err := s.UserUpdate("", "", botUser.Username, avatarImgDate, "")
+		guilds, err := s.UserGuilds()
 		if err != nil {
-			log.Print("Unable to update user: ", err)
-			return
+			log.Print("Unable to retrieve the guilds the user is in: ",err)
 		}
-		err = s.GuildMemberNickname(curGuild.ID, newUser.ID, name + "-Bot")
-		if err != nil {
-			log.Print("Unable to set nickname: ", err)
+		for _, g := range guilds {
+
+			newUser, err := s.UserUpdate("", "", botUser.Username, avatarImgDate, "")
+			if err != nil {
+				log.Print("Unable to update user: ", err)
+				return
+			}
+			err = s.GuildMemberNickname(g.ID, newUser.ID, name + "-Bot")
+			if err != nil {
+				log.Print("Unable to set nickname: ", err)
+			}
+			log.Print("Updated user: ", newUser.Username)
 		}
-		log.Print("Updated user: ", newUser.Username)
 	} else {
 		log.Print("Unable to find set goddess: ", args)
 	}
