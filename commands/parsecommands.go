@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"github.com/chiefnoah/rm-go-discordbot/database"
 	"github.com/chiefnoah/rm-go-discordbot/config"
+	"encoding/base64"
+	"io/ioutil"
 )
 
 /****************************************************************************************************************
@@ -64,7 +66,7 @@ var getRolesCommand = CommandProcess{
 }
 
 //Commands MUST be specified here to be checked.
-var enabledCommands []CommandProcess = []CommandProcess{tempChannelCommand, getRolesCommand, d20Command, optRolesCommand, setProfile, helpCommand}
+var enabledCommands []CommandProcess = []CommandProcess{tempChannelCommand, getRolesCommand, d20Command, optRolesCommand, setProfile}
 
 
 //Wraps command triggers, additional parameters, and explicitly defines the function to be called when a command is typed
@@ -76,7 +78,7 @@ type CommandProcess struct {
 	Triggers         map[string]interface{}                                       //Maps for fast lookup, we don't actually care about what they hold
 	Run              func(*discordgo.Session, *discordgo.Message, []string, bool) //I explicity define a function that implements Command so we can just loop through all the CommandProcesses and call Run generically
 	AdditionalParams []string
-	Description	 string
+	Description      string
 	DeleteCommand    bool
 }
 
@@ -84,6 +86,7 @@ func ParseCommand(s *discordgo.Session, c *discordgo.Message) {
 	command := strings.Fields(c.Content)[0][1:]//takes the first word (has to be the command), and drops the prefix
 	if contains(helpCommand.Triggers, command) {
 		helpCommand.Run(s, c, []string{}, true)
+		return
 	}
 	for _, v := range enabledCommands {
 		if contains(v.Triggers, command) {
@@ -112,7 +115,7 @@ func tempChannel(s *discordgo.Session, m *discordgo.Message, extraArgs []string,
 		return
 	}
 
-	s.GuildMemberMove(curChannel.GuildID,m.Author.ID,newChannel.ID)
+	s.GuildMemberMove(curChannel.GuildID, m.Author.ID, newChannel.ID)
 
 	if deleteCommand {
 		s.ChannelMessageDelete(m.ChannelID, m.ID)
@@ -139,7 +142,7 @@ func optIn(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delet
 		log.Print("Unable to fetch guild member")
 		return
 	}
-	s.GuildMemberEdit(curChannel.GuildID,m.Author.ID,append(mem.Roles,role))
+	s.GuildMemberEdit(curChannel.GuildID, m.Author.ID, append(mem.Roles, role))
 	if deleteCommand {
 		s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
@@ -197,7 +200,7 @@ func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delete
 	helpMessage := ""
 
 	for _, v := range enabledCommands {
-		for k,_ := range v.Triggers {
+		for k, _ := range v.Triggers {
 			helpMessage += k + ", "
 		}
 		helpMessage = helpMessage[:len(helpMessage) - 2] //Trim off the last ", "
@@ -214,24 +217,59 @@ func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delete
 }
 
 func setGoddess(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
-	if len(m.Content) < 2 {
+	args := strings.Split(m.Content, " ")[1:]
+	if len(args) < 1 {
+		//we could return an error message, or just delete the command and be done with it idk
+
 		return
 	}
 	cfg := config.LoadConfig()
 	goddess := strings.Split(m.Content, " ")[1:][0]
-	//message, err := s.ChannelMessageSend(m.ChannelID, "")
-	//curChannel, err := s.Channel(message.ChannelID)
-	profile, err := s.User("@me")
-	member, err := s.GuildMember(curChannel.GuildID,profile.ID)
-	setName := -1
-	for p,v := range cfg.CPUConfig.GoddessNames {
-		if(v == goddess){
-			setName = p
-			member.Nick = goddess
+	log.Print("Attempting to set profile to goddess: ", goddess)
+	curChannel, err := s.Channel(m.ChannelID)
+	if err != nil {
+		log.Print("Unable to get the current channel: ", err)
+		return
+	}
+	curGuild, err := s.Guild(curChannel.GuildID)
+	if err != nil {
+		log.Print("Unable to get the current guild: ", err)
+	}
+	botUser, err := s.User("@me")
+	if err != nil {
+		log.Print("Unable to get bot user!")
+		return
+	}
+	//log.Printf("Guild: %+s\nBot: %+s", curGuild, botUser)
+
+	name := ""
+	avatarImgDate := "data:image/jpeg;base64,"
+	for p, v := range cfg.CPUConfig.GoddessNames {
+		if (v == goddess) {
+			rnd := rand.Intn(len(cfg.CPUConfig.GoddessImages[p]))
+			data, err := ioutil.ReadFile("./images/" + cfg.CPUConfig.GoddessImages[p][rnd])
+			if err != nil {
+				log.Print("Unable to load profile image for goddess: ", err)
+				return
+			}
+			avatarImgDate += base64.StdEncoding.EncodeToString(data)
+			name = cfg.CPUConfig.GoddessNames[p]
 		}
 	}
-	if(setName >= 0){
-		profile.Avatar = cfg.CPUConfig.GoddessImages[setName][0]
+	//This means we got were able to load a goddess name and image
+	if len(name) > 0 {
+		newUser, err := s.UserUpdate("", "", botUser.Username, avatarImgDate, "")
+		if err != nil {
+			log.Print("Unable to update user: ", err)
+			return
+		}
+		err = s.GuildMemberNickname(curGuild.ID, newUser.ID, name + "-Bot")
+		if err != nil {
+			log.Print("Unable to set nickname: ", err)
+		}
+		log.Print("Updated user: ", newUser.Username)
+	} else {
+		log.Print("Unable to find set goddess: ", args)
 	}
 }
 
