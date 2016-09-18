@@ -6,11 +6,14 @@ import (
 	"log"
 	"time"
 	"github.com/chiefnoah/rm-go-discordbot/commands"
+	"github.com/chiefnoah/rm-go-discordbot/database"
 )
 
 func main() {
 
 	cfg := config.LoadConfig()
+	database.Init()
+	defer database.End()
 
 	discord, err := discordgo.New(cfg.AppConfig.AuthToken)
 	if err != nil {

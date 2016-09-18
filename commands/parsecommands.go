@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"github.com/chiefnoah/rm-go-discordbot/database"
 )
 
 /****************************************************************************************************************
@@ -136,6 +137,11 @@ func optIn(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delet
 }
 
 func roleInfo(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
+	args := strings.Split(m.Content, " ")[1:]
+	if len(args) == 0 {
+		getManagedRoles(s, m, extraArgs, deleteCommand)
+		return
+	}
 	messageContent := "Fill in commands"
 
 	message, err := s.ChannelMessageSend(m.ChannelID, messageContent)
@@ -150,6 +156,25 @@ func roleInfo(s *discordgo.Session, m *discordgo.Message, extraArgs []string, de
 func rollD20(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
 	messageContent := strconv.Itoa(rand.Intn(21))
 	log.Print("Rolled: ", messageContent)
+	message, err := s.ChannelMessageSend(m.ChannelID, messageContent)
+	if err != nil || message == nil {
+		log.Print("Unable to send message to discord: ", err)
+	}
+	if deleteCommand {
+		s.ChannelMessageDelete(m.ChannelID, m.ID)
+	}
+}
+
+func getManagedRoles(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
+	messageContent := "Roles available: "
+	managedRoles, err := database.GetManagedRoles(m.Author.ID)
+	if err != nil {
+		messageContent = "No roles available to join :("
+	}
+	for _, mr := range managedRoles {
+		messageContent += "\n*  " + mr.Name + " - " + mr.Description
+	}
+
 	message, err := s.ChannelMessageSend(m.ChannelID, messageContent)
 	if err != nil || message == nil {
 		log.Print("Unable to send message to discord: ", err)
