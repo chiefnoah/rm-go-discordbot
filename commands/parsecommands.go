@@ -5,6 +5,7 @@ import (
 	"strings"
 	"log"
 	"math/rand"
+	"strconv"
 )
 
 /****************************************************************************************************************
@@ -12,13 +13,13 @@ import (
 *						Define commands here!						*
 *														*
 ****************************************************************************************************************/
-/*var helpCommand = CommandProcess{
+var helpCommand = CommandProcess{
 	Triggers: map[string]interface{}{"h": nil, "help": nil, "wat": nil},
 	Run: help,
 	AdditionalParams: []string{},
 	DeleteCommand: false,
 	Description: "Prints this dialog",
-}*/
+}
 
 var tempChannelCommand = CommandProcess{
 	Triggers: map[string]interface{}{"gChannel": nil},
@@ -71,6 +72,9 @@ type CommandProcess struct {
 
 func ParseCommand(s *discordgo.Session, c *discordgo.Message) {
 	command := strings.Fields(c.Content)[0][1:]//takes the first word (has to be the command), and drops the prefix
+	if contains(helpCommand.Triggers, command) {
+		helpCommand.Run(s, c, []string{}, true)
+	}
 	for _, v := range enabledCommands {
 		if contains(v.Triggers, command) {
 			v.Run(s, c, v.AdditionalParams, v.DeleteCommand)
@@ -144,8 +148,8 @@ func roleInfo(s *discordgo.Session, m *discordgo.Message, extraArgs []string, de
 }
 
 func rollD20(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
-	messageContent := "" + string(rand.Intn(21))
-
+	messageContent := strconv.Itoa(rand.Intn(21))
+	log.Print("Rolled: ", messageContent)
 	message, err := s.ChannelMessageSend(m.ChannelID, messageContent)
 	if err != nil || message == nil {
 		log.Print("Unable to send message to discord: ", err)
@@ -155,7 +159,7 @@ func rollD20(s *discordgo.Session, m *discordgo.Message, extraArgs []string, del
 	}
 }
 
-/*func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
+func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
 
 	helpMessage := ""
 
@@ -174,7 +178,7 @@ func rollD20(s *discordgo.Session, m *discordgo.Message, extraArgs []string, del
 	if deleteCommand {
 		s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
-}*/
+}
 
 func contains(set map[string]interface{}, s string) bool {
 	_, ok := set[s]
