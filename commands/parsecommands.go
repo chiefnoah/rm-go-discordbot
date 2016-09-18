@@ -219,9 +219,9 @@ func setGoddess(s *discordgo.Session, m *discordgo.Message, extraArgs []string, 
 	}
 	cfg := config.LoadConfig()
 	goddess := strings.Split(m.Content, " ")[1:][0]
-	message, err := s.ChannelMessageSend(m.ChannelID, "")
-	curChannel, err := s.Channel(message.ChannelID)
-	profile := message.Author
+	//message, err := s.ChannelMessageSend(m.ChannelID, "")
+	//curChannel, err := s.Channel(message.ChannelID)
+	profile, err := s.User("@me")
 	member, err := s.GuildMember(curChannel.GuildID,profile.ID)
 	setName := -1
 	for p,v := range cfg.CPUConfig.GoddessNames {
