@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"strconv"
 	"github.com/chiefnoah/rm-go-discordbot/database"
+	"github.com/chiefnoah/rm-go-discordbot/config"
 )
 
 /****************************************************************************************************************
@@ -46,6 +47,14 @@ var d20Command = CommandProcess{
 	DeleteCommand: false,
 }
 
+var setProfile = CommandProcess{
+	Triggers: map[string]interface{}{"cpu": nil},
+	Run: setGoddess,
+	AdditionalParams: []string{},
+	Description: "Sets the profile name and image of the bot",
+	DeleteCommand: false,
+}
+
 var getRolesCommand = CommandProcess{
 	Triggers: map[string]interface{}{"r": nil, "roles": nil},
 	Run: roleInfo,
@@ -55,7 +64,7 @@ var getRolesCommand = CommandProcess{
 }
 
 //Commands MUST be specified here to be checked.
-var enabledCommands []CommandProcess = []CommandProcess{tempChannelCommand, getRolesCommand, d20Command, optRolesCommand}
+var enabledCommands []CommandProcess = []CommandProcess{tempChannelCommand, getRolesCommand, d20Command, optRolesCommand, setProfile, helpCommand}
 
 
 //Wraps command triggers, additional parameters, and explicitly defines the function to be called when a command is typed
@@ -185,7 +194,6 @@ func getManagedRoles(s *discordgo.Session, m *discordgo.Message, extraArgs []str
 }
 
 func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
-
 	helpMessage := ""
 
 	for _, v := range enabledCommands {
@@ -193,7 +201,7 @@ func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delete
 			helpMessage += k + ", "
 		}
 		helpMessage = helpMessage[:len(helpMessage) - 2] //Trim off the last ", "
-		helpMessage += "\n" + v.Description
+		helpMessage += v.Description + "\n"
 	}
 
 	message, err := s.ChannelMessageSend(m.ChannelID, helpMessage)
@@ -202,6 +210,28 @@ func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, delete
 	}
 	if deleteCommand {
 		s.ChannelMessageDelete(m.ChannelID, m.ID)
+	}
+}
+
+func setGoddess(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
+	if len(m.Content) < 2 {
+		return
+	}
+	cfg := config.LoadConfig()
+	goddess := strings.Split(m.Content, " ")[1:][0]
+	message, err := s.ChannelMessageSend(m.ChannelID, "")
+	curChannel, err := s.Channel(message.ChannelID)
+	profile := message.Author
+	member, err := s.GuildMember(curChannel.GuildID,profile.ID)
+	setName := -1
+	for p,v := range cfg.CPUConfig.GoddessNames {
+		if(v == goddess){
+			setName = p
+			member.Nick = goddess
+		}
+	}
+	if(setName >= 0){
+		profile.Avatar = cfg.CPUConfig.GoddessImages[setName][0]
 	}
 }
 
