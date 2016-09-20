@@ -259,7 +259,9 @@ func setGoddess(s *discordgo.Session, m *discordgo.Message, extraArgs []string, 
 				log.Print("Unable to update user: ", err)
 				return
 			}
-			err = s.GuildMemberNickname(g.ID, newUser.ID, name + "-Bot")
+			nickMessage := "/nick " + name + "-Bot"
+			message, err := s.ChannelMessageSend(m.ChannelID, nickMessage)
+			//err = s.GuildMemberNickname(g.ID, newUser.ID, name + "-Bot")
 			if err != nil {
 				log.Print("Unable to set nickname: ", err)
 			}
