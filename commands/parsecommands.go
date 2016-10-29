@@ -179,7 +179,16 @@ func rollD20(s *discordgo.Session, m *discordgo.Message, extraArgs []string, del
 
 func getManagedRoles(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
 	messageContent := "Roles available: "
-	managedRoles, err := database.GetManagedRoles(m.Author.ID)
+	channel, err := s.Channel(m.ChannelID)
+	if err != nil {
+		log.Print("Unable to get channel for some reason...")
+	}
+	guild, err := s.Guild(channel.GuildID)
+	if err != nil {
+		log.Print("Unable to get guild for some reason...")
+	}
+	guildMember, err := s.GuildMember(guild.ID, m.Author.ID)
+	managedRoles, err := database.GetManagedRoles(guildMember)
 	if err != nil {
 		messageContent = "No roles available to join :("
 	}
@@ -194,6 +203,41 @@ func getManagedRoles(s *discordgo.Session, m *discordgo.Message, extraArgs []str
 	if deleteCommand {
 		s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
+}
+/*
+	Syntax: _r managed-role-name role-that-can-join-managed-role
+	If the Managed Role does not exist, it is created
+ */
+func addManagedRole(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
+	args := strings.Split(m.Content, " ")[1:]
+
+	channel, err := s.Channel(m.ChannelID)
+	if err != nil {
+		log.Print("Unable to get channel: ", err)
+		return
+	}
+	roles, err := s.GuildRoles(channel.GuildID)
+	if err != nil {
+		log.Print("Unable to get guild: ", err)
+		return
+	}
+	var managedRoleID string
+	var discordRoleID string
+	for _, r := range roles {
+		if r.Name == args[0] {
+			managedRoleID = r.ID
+		}
+		if r.Name == args[1] {
+			discordRoleID = r.ID
+		}
+	}
+	//Check if both of those roles exist. If they don't, the command fails
+	if managedRoleID == nil || discordRoleID == nil {
+		//TODO: failure message
+		return
+	}
+
+
 }
 
 func help(s *discordgo.Session, m *discordgo.Message, extraArgs []string, deleteCommand bool) {
@@ -259,6 +303,7 @@ func setGoddess(s *discordgo.Session, m *discordgo.Message, extraArgs []string, 
 				log.Print("Unable to update user: ", err)
 				return
 			}
+			log.Print("Setting CPU-Bot name to : " , name)
 			err = s.GuildMemberNickname(g.ID, newUser.ID, name + "-Bot")
 			if err != nil {
 				log.Print("Unable to set nickname: ", err)
