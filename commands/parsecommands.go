@@ -6,8 +6,8 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
-	"github.com/chiefnoah/rm-go-discordbot/database"
-	"github.com/chiefnoah/rm-go-discordbot/config"
+	"../database"
+	"../config"
 	"encoding/base64"
 	"io/ioutil"
 )

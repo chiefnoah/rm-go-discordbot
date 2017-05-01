@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/chiefnoah/rm-go-discordbot/config"
+	"./config"
 	"log"
 	"time"
-	"github.com/chiefnoah/rm-go-discordbot/commands"
-	"github.com/chiefnoah/rm-go-discordbot/database"
+	"./commands"
+	"./database"
 )
 
 func main() {
@@ -20,11 +20,14 @@ func main() {
 		log.Fatal("Unable to authenticate with discord")
 		return
 	}
+
 	err = discord.Open()
+
 	if err != nil {
 		log.Fatal("Unable to open connection: ", err)
 		return
 	}
+
 	defer discord.Close()
 
 	discord.AddHandler(func(s *discordgo.Session, m *discordgo.GuildMemberAdd) {

@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"log"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/mattn/go-sqlite3"
 	"errors"
 )
 
