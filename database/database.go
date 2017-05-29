@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"log"
 	_ "github.com/mattn/go-sqlite3"
-	"git.chiefnoah.tech/chiefnoah/GoGetMeHentai/config"
 	"github.com/bwmarrin/discordgo"
 	"strings"
+	"github.com/chiefnoah/rm-go-discordbot/config"
 )
 
 const (

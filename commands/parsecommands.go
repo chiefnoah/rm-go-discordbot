@@ -232,7 +232,7 @@ func addManagedRole(s *discordgo.Session, m *discordgo.Message, extraArgs []stri
 		}
 	}
 	//Check if both of those roles exist. If they don't, the command fails
-	if managedRoleID == nil || discordRoleID == nil {
+	if managedRoleID == "" || discordRoleID == "" {
 		//TODO: failure message
 		return
 	}
